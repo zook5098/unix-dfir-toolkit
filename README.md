@@ -3,7 +3,7 @@
 Automated collection and normalization of Unix-like host artifacts for
 rapid incident response triage. Companion to
 [windows-dfir-toolkit](https://github.com/zook5098/windows-dfir-toolkit),
-covering Linux/macOS/*BSD/Solaris hosts the way that repo covers Windows.
+covering Linux/macOS/*BSD/Solaris hosts.
 
 ## Relationship to UAC
 
