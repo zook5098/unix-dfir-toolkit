@@ -126,7 +126,11 @@ def main():
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"{args.case_name}_{timestamp}"
-    run_dir = os.path.join(args.output_dir, run_name)
+    # Absolute: uac is run with cwd pinned to its own directory (see below),
+    # so a relative --output-dir/--offline-image would otherwise resolve
+    # against uac's directory instead of the caller's.
+    output_dir_abs = os.path.abspath(args.output_dir)
+    run_dir = os.path.join(output_dir_abs, run_name)
 
     if not args.dry_run:
         os.makedirs(run_dir, exist_ok=True)
@@ -141,7 +145,7 @@ def main():
     uac_args += ["-o", args.output_format]
     uac_args += ["--case-number", args.case_name]
     if args.offline_image:
-        uac_args += ["--offline-image", args.offline_image, "--offline-system", args.offline_system]
+        uac_args += ["--offline-image", os.path.abspath(args.offline_image), "--offline-system", args.offline_system]
     uac_args += [run_dir]
 
     print(f"uac binary    : {uac_exe}")
@@ -156,9 +160,17 @@ def main():
         print(" ".join(uac_args))
         return
 
+    # uac locates its own bin/lib helper files relative to the working
+    # directory it's run from, not relative to its own script path -- it
+    # errors out with "Required files not found" if invoked with cwd
+    # anywhere else, so cwd is pinned to uac's own directory here.
+    uac_dir = os.path.dirname(os.path.abspath(uac_exe))
+
     log_path = os.path.join(args.output_dir, f"{run_name}.log")
     with open(log_path, "w", encoding="utf-8") as log_file:
-        result = subprocess.run(uac_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        result = subprocess.run(
+            uac_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=uac_dir
+        )
         log_file.write(result.stdout or "")
         print(result.stdout or "")
 
